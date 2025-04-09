@@ -1,0 +1,2 @@
+# plinkogame
+plinko-game
