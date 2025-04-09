@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plinko Game</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Plinko</div>
+            <div class="balance-container">
+                <span class="balance-value">1000.00</span>
+                <span class="balance-currency">$</span>
+                <i class="balance-dropdown fa-solid fa-caret-down"></i>
+            </div>
+        </header>
+
+        <main>
+            <div class="game-container">
+                <canvas id="game-canvas"></canvas>
+                <div class="multipliers-container"></div>
+                
+                <!-- Recent drops history -->
+                <div class="recent-drops">
+                    <!-- Will be populated by JS -->
+                </div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label for="bet-amount">Bet Amount</label>
+                    <div class="bet-input-container">
+                        <input type="number" id="bet-amount" value="100.00" min="1" step="1">
+                        <span class="bet-currency">$</span>
+                        <div class="bet-shortcuts">
+                            <button class="bet-half">½</button>
+                            <button class="bet-double">2×</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="risk-level">Risk</label>
+                    <div class="select-container">
+                        <select id="risk-level">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high" selected>High</option>
+                        </select>
+                        <i class="fa-solid fa-caret-down"></i>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="rows-count">Rows</label>
+                    <div class="select-container">
+                        <select id="rows-count">
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16" selected>16</option>
+                        </select>
+                        <i class="fa-solid fa-caret-down"></i>
+                    </div>
+                </div>
+                
+                <div class="control-group bet-mode">
+                    <button class="bet-mode-btn active" data-mode="manual">Manual</button>
+                    <button class="bet-mode-btn" data-mode="auto">Auto</button>
+                </div>
+                
+                <button id="drop-ball" class="drop-btn">Bet</button>
+            </div>
+            
+            <div class="footer-controls">
+                <div class="left-controls">
+                    <button class="footer-btn" id="settings-btn">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                    <button class="footer-btn" id="stats-btn">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </button>
+                    <button class="footer-btn" id="favorites-btn">
+                        <i class="fa-regular fa-star"></i>
+                    </button>
+                </div>
+                <div class="right-controls">
+                    <span class="fairness-text">Fairness</span>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Settings modal (hidden by default) -->
+        <div class="modal settings-modal">
+            <div class="modal-content">
+                <h3>Settings</h3>
+                <div class="settings-group">
+                    <label for="sound-toggle">Sound</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sound-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="settings-group">
+                    <label for="animation-speed">Animation Speed</label>
+                    <input type="range" id="animation-speed" min="1" max="5" value="3">
+                </div>
+                <button class="close-modal">Close</button>
+            </div>
+        </div>
+        
+        <!-- Win notification (hidden by default) -->
+        <div class="win-notification">
+            <div class="win-content">
+                <p class="win-text">You won <span class="win-amount">0.00</span>!</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/physics.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
