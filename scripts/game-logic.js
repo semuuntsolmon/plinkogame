@@ -1,4 +1,3 @@
-// game-logic.js
 class PlinkoGame {
     constructor() {
         this.canvas = document.getElementById('plinkoCanvas');
