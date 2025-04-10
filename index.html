@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=375, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Stake-style Plinko</title>
+    <style>
+        :root {
+            --stake-dark: #121820;
+            --stake-panel: #1a222e;
+            --stake-border: #2a3547;
+            --stake-text: #cfd7e2;
+            --stake-ball: #e74c3c;
+        }
+        
+        body {
+            margin: 0;
+            background: var(--stake-dark);
+            color: var(--stake-text);
+            font-family: 'Roboto', sans-serif;
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 375px;
+            height: 100vh;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #game-canvas {
+            flex: 1;
+            background: #0d1219;
+        }
+
+        .controls {
+            padding: 12px;
+            background: var(--stake-panel);
+            border-top: 1px solid var(--stake-border);
+        }
+
+        .bet-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        input {
+            background: #2a3547;
+            border: 1px solid var(--stake-border);
+            color: var(--stake-text);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .multipliers {
+            display: flex;
+            overflow-x: auto;
+            padding: 8px 0;
+            gap: 4px;
+        }
+
+        .multiplier {
+            flex: 0 0 50px;
+            padding: 6px;
+            background: #2a3547;
+            border: 1px solid var(--stake-border);
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div class="controls">
+            <div class="bet-row">
+                <input type="number" value="10.00" step="0.1">
+                <button>½</button>
+                <button>2×</button>
+            </div>
+            <div class="multipliers">
+                <div class="multiplier">1000x</div>
+                <div class="multiplier">180x</div>
+                <div class="multiplier">260x</div>
+                <div class="multiplier">91x</div>
+                <div class="multiplier">48x</div>
+                <div class="multiplier">22x</div>
+                <!-- Continue with remaining multipliers -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PlinkoGame {
+            constructor() {
+                this.canvas = document.getElementById('game-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                this.initPhysics();
+                this.setupPegs();
+                this.setupSlots();
+                this.setupEventListeners();
+                this.animate();
+            }
+
+            resize() {
+                this.canvas.width = 375;
+                this.canvas.height = this.canvas.parentElement.clientHeight * 0.65;
+            }
+
+            initPhysics() {
+                this.balls = [];
+                this.pegs = [];
+                this.slots = [];
+                this.gravity = 0.85;
+                this.restitution = 0.62;
+                this.ballRadius = 5;
+            }
+
+            setupPegs() {
+                const rows = 16;
+                const verticalSpacing = this.canvas.height / (rows + 4);
+                
+                for(let row = 0; row < rows; row++) {
+                    const count = Math.floor(375 / (35 - row * 0.8));
+                    const offset = row % 2 === 0 ? 0 : 15;
+                    
+                    for(let i = 0; i < count; i++) {
+                        this.pegs.push({
+                            x: offset + i * (375 / (count - 0.5)),
+                            y: 40 + row * verticalSpacing,
+                            radius: 3.5
+                        });
+                    }
+                }
+            }
+
+            setupSlots() {
+                const multipliers = [1000, 180, 260, 91, 48, 22, 2, 2, 2, 2, 24, 44, 94, 268, 630, 0];
+                const slotWidth = 375 / multipliers.length;
+                
+                multipliers.forEach((mult, i) => {
+                    this.slots.push({
+                        x: i * slotWidth,
+                        y: this.canvas.height - 30,
+                        width: slotWidth,
+                        multiplier: mult
+                    });
+                });
+            }
+
+            dropBall() {
+                this.balls.push({
+                    x: 187.5 + Math.random() * 30 - 15,
+                    y: 20,
+                    vx: Math.random() * 2 - 1,
+                    vy: 0,
+                    radius: 5
+                });
+            }
+
+            updatePhysics() {
+                this.balls.forEach(ball => {
+                    // Apply forces
+                    ball.vy += this.gravity;
+                    ball.x += ball.vx;
+                    ball.y += ball.vy;
+
+                    // Peg collisions
+                    this.pegs.forEach(peg => {
+                        const dx = ball.x - peg.x;
+                        const dy = ball.y - peg.y;
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        
+                        if(distance < ball.radius + peg.radius) {
+                            const nx = dx / distance;
+                            const ny = dy / distance;
+                            
+                            // Position correction
+                            ball.x += nx * (ball.radius + peg.radius - distance) * 0.7;
+                            ball.y += ny * (ball.radius + peg.radius - distance) * 0.7;
+                            
+                            // Velocity reflection
+                            const dot = ball.vx * nx + ball.vy * ny;
+                            ball.vx = (ball.vx - 2 * dot * nx) * this.restitution;
+                            ball.vy = (ball.vy - 2 * dot * ny) * this.restitution;
+                        }
+                    });
+
+                    // Wall collisions
+                    if(ball.x < ball.radius || ball.x > 375 - ball.radius) {
+                        ball.vx *= -this.restitution;
+                        ball.x = Math.max(ball.radius, Math.min(375 - ball.radius, ball.x));
+                    }
+
+                    // Slot detection
+                    this.slots.forEach(slot => {
+                        if(ball.y > slot.y && ball.x >= slot.x && ball.x <= slot.x + slot.width) {
+                            ball.vy = 0;
+                            ball.vx = 0;
+                            ball.y = slot.y;
+                        }
+                    });
+                });
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, 375, this.canvas.height);
+                
+                // Draw pegs
+                this.pegs.forEach(peg => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(peg.x, peg.y, peg.radius, 0, Math.PI*2);
+                    this.ctx.fillStyle = '#2a3547';
+                    this.ctx.fill();
+                });
+
+                // Draw balls
+                this.balls.forEach(ball => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+                    const grad = this.ctx.createRadialGradient(
+                        ball.x-2, ball.y-2, 1,
+                        ball.x, ball.y, ball.radius
+                    );
+                    grad.addColorStop(0, '#ff5555');
+                    grad.addColorStop(1, '#cc4444');
+                    this.ctx.fillStyle = grad;
+                    this.ctx.fill();
+                });
+
+                // Draw slots
+                this.slots.forEach(slot => {
+                    this.ctx.fillStyle = '#1a222e55';
+                    this.ctx.fillRect(slot.x, slot.y, slot.width, 30);
+                });
+            }
+
+            animate() {
+                this.updatePhysics();
+                this.draw();
+                requestAnimationFrame(() => this.animate());
+            }
+
+            setupEventListeners() {
+                document.querySelector('input').addEventListener('change', e => {
+                    this.currentBet = parseFloat(e.target.value);
+                });
+
+                document.querySelector('.bet-row button:last-child').addEventListener('click', () => {
+                    this.dropBall();
+                });
+            }
+        }
+
+        new PlinkoGame();
+    </script>
+</body>
+</html>
